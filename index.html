@@ -147,6 +147,7 @@
     <input type="text" id="contact" placeholder="@username или email@example.com">
 
     <button onclick="submitForm()">Отправить заявку</button>
+	<button onclick="Telegram.WebApp.openTelegramLink('https://t.me/vakleader_support')">Написать менеджеру</button>
 
     <p class="footer-note">
       * по отдельным гуманитарным и экономическим специальностям<br>
@@ -154,47 +155,46 @@
     </p>
   </div>
 
-  <script>
-    // Инициализация Telegram WebApp
-    if (window.Telegram && Telegram.WebApp) {
-      Telegram.WebApp.expand();
-      Telegram.WebApp.setHeaderColor('#179CDE');
-      Telegram.WebApp.setBackgroundColor('#f8fafc');
-      Telegram.WebApp.ready();
-    }
+ <script>
+  // Инициализация Telegram WebApp — один раз
+  if (window.Telegram && Telegram.WebApp) {
+    Telegram.WebApp.ready(); // Обязательно!
+    Telegram.WebApp.expand();
+    Telegram.WebApp.setHeaderColor('#179CDE');
+    Telegram.WebApp.setBackgroundColor('#f8fafc');
+  }
 
-    function showPrice() {
-      const journal = document.getElementById('journal').value;
-      const pages = parseInt(document.getElementById('pages').value) || 15;
-      const urgency = document.getElementById('urgency').value;
+  function showPrice() {
+    const journal = document.getElementById('journal').value;
+    const pages = parseInt(document.getElementById('pages').value) || 15;
+    const urgency = document.getElementById('urgency').value;
 
-      let base = journal === 'Журнал ВАК РФ' ? 12000 : 8000;
-      if (urgency === 'Экспресс (16 часов)') base = Math.round(base * 1.4);
+    let base = journal === 'Журнал ВАК РФ' ? 12000 : 8000;
+    if (urgency === 'Экспресс (16 часов)') base = Math.round(base * 1.4);
 
-      const price = pages < 10 ? base : base + (pages - 10) * 800;
-      document.getElementById('result').innerText = `Стоимость: ${price.toLocaleString()} ₽`;
-    }
+    const price = pages < 10 ? base : base + (pages - 10) * 800;
+    document.getElementById('result').innerText = `Стоимость: ${price.toLocaleString()} ₽`;
+  }
 
-    function submitForm() {
-      const name = document.getElementById('name').value;
-      const contact = document.getElementById('contact').value;
-      if (!name || !contact) {
-        if (window.Telegram && Telegram.WebApp) {
-          Telegram.WebApp.showAlert('Пожалуйста, укажите имя и контакт!');
-        } else {
-          alert('Пожалуйста, укажите имя и контакт!');
-        }
-        return;
-      }
+  function submitForm() {
+    const name = document.getElementById('name').value.trim();
+    const contact = document.getElementById('contact').value.trim();
 
+    if (!name || !contact) {
       if (window.Telegram && Telegram.WebApp) {
-        Telegram.WebApp.showAlert('Спасибо! Специалист свяжется с вами в течение 15 минут.');
-        // Позже: можно добавить отправку в Google Таблицу
+        Telegram.WebApp.showAlert('Пожалуйста, укажите имя и контакт!');
       } else {
-        alert('Ваша заявка принята! Ожидайте связи.');
+        alert('Пожалуйста, укажите имя и контакт!');
       }
+      return;
     }
-  </script>
+
+    if (window.Telegram && Telegram.WebApp) {
+      Telegram.WebApp.showAlert('Спасибо! Специалист свяжется с вами в течение 15 минут.');
+    } else {
+      alert('Ваша заявка принята! Ожидайте связи.');
+    }
+  }
+</script>
 </body>
 </html>
-
