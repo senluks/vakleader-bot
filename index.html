@@ -61,7 +61,7 @@
       color: #2d3748;
       font-size: 15px;
     }
-    select, input {
+    select, input, textarea {
       width: 100%;
       padding: 14px;
       border: 1px solid #cbd5e0;
@@ -71,7 +71,11 @@
       background: #fafafa;
       transition: border-color 0.2s;
     }
-    select:focus, input:focus {
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+    select:focus, input:focus, textarea:focus {
       outline: none;
       border-color: #179CDE;
       background: white;
@@ -99,6 +103,11 @@
       color: #179CDE;
       margin: 20px 0;
       min-height: 28px;
+    }
+    .file-info {
+      font-size: 13px;
+      color: #64748b;
+      margin-top: 6px;
     }
     .footer-note {
       font-size: 12px;
@@ -140,14 +149,27 @@
 
     <h2 style="font-size: 19px; margin: 28px 0 16px; font-weight: 600; color: #2d3748;">Оставить заявку</h2>
     
-    <label>Ваше имя</label>
-    <input type="text" id="name" placeholder="Имя и фамилия">
+    <label>ФИО *</label>
+    <input type="text" id="fullname" placeholder="Иванов Иван Иванович" required>
 
-    <label>Telegram или email</label>
-    <input type="text" id="contact" placeholder="@username или email@example.com">
+    <label>Email *</label>
+    <input type="email" id="email" placeholder="ivan@example.com" required>
+
+    <label>Телефон</label>
+    <input type="tel" id="phone" placeholder="+7 (999) 123-45-67">
+
+    <label>Тема *</label>
+    <input type="text" id="subject" placeholder="Публикация статьи по экономике" required>
+
+    <label>Ваше сообщение *</label>
+    <textarea id="message" placeholder="Опишите, пожалуйста, тему статьи, объём, срочность и другие пожелания..."></textarea>
+
+    <label>Прикрепите статью (не более 5 МБ)</label>
+    <input type="file" id="article" accept=".rtf,.doc,.docx">
+    <div class="file-info">Поддерживаются форматы: .rtf, .doc, .docx</div>
 
     <button onclick="submitForm()">Отправить заявку</button>
-	<button onclick="Telegram.WebApp.openTelegramLink('https://t.me/vakleader_support')">Написать менеджеру</button>
+    <button onclick="Telegram.WebApp.openTelegramLink('https://t.me/vakleader_support')">Написать менеджеру</button>
 
     <p class="footer-note">
       * по отдельным гуманитарным и экономическим специальностям<br>
@@ -155,46 +177,101 @@
     </p>
   </div>
 
- <script>
-  // Инициализация Telegram WebApp — один раз
-  if (window.Telegram && Telegram.WebApp) {
-    Telegram.WebApp.ready(); // Обязательно!
-    Telegram.WebApp.expand();
-    Telegram.WebApp.setHeaderColor('#179CDE');
-    Telegram.WebApp.setBackgroundColor('#f8fafc');
-  }
-
-  function showPrice() {
-    const journal = document.getElementById('journal').value;
-    const pages = parseInt(document.getElementById('pages').value) || 15;
-    const urgency = document.getElementById('urgency').value;
-
-    let base = journal === 'Журнал ВАК РФ' ? 12000 : 8000;
-    if (urgency === 'Экспресс (16 часов)') base = Math.round(base * 1.4);
-
-    const price = pages < 10 ? base : base + (pages - 10) * 800;
-    document.getElementById('result').innerText = `Стоимость: ${price.toLocaleString()} ₽`;
-  }
-
-  function submitForm() {
-    const name = document.getElementById('name').value.trim();
-    const contact = document.getElementById('contact').value.trim();
-
-    if (!name || !contact) {
-      if (window.Telegram && Telegram.WebApp) {
-        Telegram.WebApp.showAlert('Пожалуйста, укажите имя и контакт!');
-      } else {
-        alert('Пожалуйста, укажите имя и контакт!');
-      }
-      return;
-    }
-
+  <script>
     if (window.Telegram && Telegram.WebApp) {
-      Telegram.WebApp.showAlert('Спасибо! Специалист свяжется с вами в течение 15 минут.');
-    } else {
-      alert('Ваша заявка принята! Ожидайте связи.');
+      Telegram.WebApp.ready();
+      Telegram.WebApp.expand();
+      Telegram.WebApp.setHeaderColor('#179CDE');
+      Telegram.WebApp.setBackgroundColor('#f8fafc');
     }
-  }
-</script>
+
+    function showPrice() {
+      const journal = document.getElementById('journal').value;
+      const pages = parseInt(document.getElementById('pages').value) || 15;
+      const urgency = document.getElementById('urgency').value;
+
+      let base = journal === 'Журнал ВАК РФ' ? 12000 : 8000;
+      if (urgency === 'Экспресс (16 часов)') base = Math.round(base * 1.4);
+
+      const price = pages < 10 ? base : base + (pages - 10) * 800;
+      document.getElementById('result').innerText = `Стоимость: ${price.toLocaleString()} ₽`;
+    }
+
+    function submitForm() {
+      const fullname = document.getElementById('fullname').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      const subject = document.getElementById('subject').value.trim();
+      const message = document.getElementById('message').value.trim();
+      const articleFile = document.getElementById('article').files[0];
+
+      // Валидация обязательных полей
+      if (!fullname || !email || !subject || !message) {
+        if (window.Telegram && Telegram.WebApp) {
+          Telegram.WebApp.showAlert('Пожалуйста, заполните все обязательные поля (*)!');
+        } else {
+          alert('Пожалуйста, заполните все обязательные поля (*)!');
+        }
+        return;
+      }
+
+      // Проверка email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        if (window.Telegram && Telegram.WebApp) {
+          Telegram.WebApp.showAlert('Пожалуйста, введите корректный email!');
+        } else {
+          alert('Пожалуйста, введите корректный email!');
+        }
+        return;
+      }
+
+      // Сообщение о файле
+      let fileNote = '';
+      if (articleFile) {
+        const maxSize = 5 * 1024 * 1024; // 5 MB
+        const validTypes = ['application/rtf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+        const fileExtension = articleFile.name.split('.').pop().toLowerCase();
+        const validExts = ['rtf', 'doc', 'docx'];
+
+        if (articleFile.size > maxSize) {
+          if (window.Telegram && Telegram.WebApp) {
+            Telegram.WebApp.showAlert('Файл не должен превышать 5 МБ!');
+          } else {
+            alert('Файл не должен превышать 5 МБ!');
+          }
+          return;
+        }
+
+        if (!validExts.includes(fileExtension)) {
+          if (window.Telegram && Telegram.WebApp) {
+            Telegram.WebApp.showAlert('Разрешены только файлы: .rtf, .doc, .docx');
+          } else {
+            alert('Разрешены только файлы: .rtf, .doc, .docx');
+          }
+          return;
+        }
+
+        fileNote = `\n\n📄 Файл статьи прикреплён: ${articleFile.name}`;
+      } else {
+        fileNote = '\n\n⚠️ Статью необходимо отправить отдельно в чат с менеджером (@vakleader_support), так как загрузка файлов через форму временно недоступна.';
+      }
+
+      // === ЗДЕСЬ: можно отправить данные на сервер или в Google Form ===
+      // Пока — просто показываем подтверждение
+
+      const successMsg = `Спасибо, ${fullname}!\n\nВаша заявка принята.\nТема: ${subject}\nEmail: ${email}${phone ? `\nТелефон: ${phone}` : ''}${fileNote}\n\nМенеджер свяжется с вами в течение 15 минут.`;
+
+      if (window.Telegram && Telegram.WebApp) {
+        Telegram.WebApp.showAlert(successMsg);
+        // Можно добавить: Telegram.WebApp.close();
+      } else {
+        alert(successMsg);
+      }
+
+      // Позже: раскомментируйте, чтобы автоматически открыть чат с поддержкой
+      // Telegram.WebApp.openTelegramLink('https://t.me/vakleader_support');
+    }
+  </script>
 </body>
 </html>
